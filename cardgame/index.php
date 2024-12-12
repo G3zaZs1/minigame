@@ -11,18 +11,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
 // Initialize the game
 if (!isset($_SESSION['cards'])) {
     $animals = [
-        'Panda' => '/img/_Panda.JPG',
-        'Tiger' => '/img/images.jpg',
-        'Elephant' => '/img/1033551-elephant.jpg',
-        'Rhino' => '/img/3yuabfu3jq_white_rhino_42993643.jpg',
-        'Turtle' => '/img/hawksbill_sea_turtle.jpg',
-        'Penguin' => '/img/pinguin.jpg',
-    ];
+        'Panda' => 'img/_Panda.JPG',
+        'Tiger' => 'img/images.jpg',
+        'Elephant' => 'img/1033551-elephant.jpg',
+        'Rhino' => 'img/3yuabfu3jq_white_rhino_42993643.jpg',
+        'Turtle' => 'img/hawksbill_sea_turtle.jpg',
+        'Penguin' => 'img/pinguin.jpg',
+    ];    
 
     $names = array_keys($animals);
     $images = array_values($animals);
 
-    $cards = array_merge($names, $images); // Combine names and images
+    // Shuffle the cards, mixing names and images
+    $cards = array_merge($names, $images); 
     shuffle($cards);
 
     $_SESSION['cards'] = $cards;
@@ -45,21 +46,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['card_index'])) {
             $firstCard = $_SESSION['cards'][$first];
             $secondCard = $_SESSION['cards'][$second];
 
-            // Check if one is a name and the other is its corresponding image
+            // Check for matching pairs (name and corresponding image)
+            define('IMG_PATH', 'img/');
             $animals = [
-                'Panda' => 'img/_Panda.JPG',
-                'Tiger' => 'img/images.jpg',
-                'Elephant' => 'img/1033551-elephant.jpg',
-                'Rhino' => 'img/3yuabfu3jq_white_rhino_42993643.jpg',
-                'Turtle' => 'img/hawksbill_sea_turtle.jpg',
-                'Penguin' => 'img/pinguin.jpg',
+                'Panda' => IMG_PATH . '_Panda.JPG',
+                'Tiger' => IMG_PATH . 'images.jpg',
+                'Elephant' => IMG_PATH . '1033551-elephant.jpg',
+                'Rhino' => IMG_PATH . '3yuabfu3jq_white_rhino_42993643.jpg',
+                'Turtle' => IMG_PATH . 'hawksbill_sea_turtle.jpg',
+                'Penguin' => IMG_PATH . 'pinguin.jpg',
             ];
 
+
+            // Check for matching pairs (name and corresponding image)
             if ((isset($animals[$firstCard]) && $animals[$firstCard] === $secondCard) ||
-                (array_search($firstCard, $animals) === $secondCard)) {
+                (isset($animals[$secondCard]) && $animals[$secondCard] === $firstCard)) {
                 $_SESSION['matched'] = array_merge($_SESSION['matched'], $_SESSION['flipped']);
             }
-            // Reset flipped cards
+
+            // Reset flipped cards after the game logic
             $_SESSION['flipped'] = [];
         }
     }
@@ -71,48 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['card_index'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Endangered Animals Memory Game</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 120px);
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        .card {
-            width: 120px;
-            height: 120px;
-            background-color: #4CAF50;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 5px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-        }
-        .card img {
-            max-width: 100%;
-            max-height: 100%;
-        }
-        .matched {
-            background-color: #888888;
-            cursor: default;
-        }
-        .actions {
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
+    <title>Veszélyeztetett állatok memóri játék</title>
 </head>
 <body>
-    <h1>Memory Game: Endangered Animals</h1>
-    <p>Match the names with their pictures!</p>
+    <h1>Veszélyeztetett állatok memóri játéka</h1>
+    <p>Párisítsd a képeket a hozzájuk tartozó nevekkel!</p>
     <form method="post">
         <div class="grid">
             <?php foreach ($_SESSION['cards'] as $index => $card): ?>
@@ -120,8 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['card_index'])) {
                         class="card <?= in_array($index, $_SESSION['matched']) ? 'matched' : '' ?>"
                         <?= in_array($index, $_SESSION['matched']) ? 'disabled' : '' ?>>
                     <?php if (in_array($index, $_SESSION['flipped']) || in_array($index, $_SESSION['matched'])): ?>
-                        <?php if (str_ends_with($card, '.jpg')): ?>
-                            <img src="images/<?= $card ?>" alt="Image of <?= $card ?>">
+                        <?php if (str_ends_with($card, '.jpg') || str_ends_with($card, '.JPG')): ?>
+                            <img src="<?= $card ?>" alt="Image of <?= $card ?>">
                         <?php else: ?>
                             <?= $card ?>
                         <?php endif; ?>
@@ -132,13 +101,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['card_index'])) {
             <?php endforeach; ?>
         </div>
         <div class="actions">
-            <button type="submit" name="reset">Reset Game</button>
+            <button type="submit" name="reset">Újraindítás</button>
         </div>
     </form>
+
+    <script>
+        let flippedCards = <?= json_encode($_SESSION['flipped']) ?>;
+
+        // If two cards are flipped, show them for 2 seconds and reset if not matched
+            setTimeout(function() {
+                // Manually reset flipped cards after the delay
+                window.location.reload(); // Reload the page to reset state
+            }, 2000);
+    </script>
+
     <?php if (count($_SESSION['matched']) === count($_SESSION['cards'])): ?>
-        <h2>Congratulations! You matched all the animals!</h2>
+        <h2>Szép munka! Minden állatot összepárosított!</h2>
         <form method="post">
-            <button type="submit" name="reset">Restart Game</button>
+            <button type="submit" name="reset">Még egy kör</button>
         </form>
         <?php session_destroy(); ?>
     <?php endif; ?>
